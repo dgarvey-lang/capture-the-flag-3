@@ -85,7 +85,7 @@ textarea.fld{width:100%; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,
 'use strict';
 var $ = function(id){ return document.getElementById(id); };
 function el(tag, cls, text){ var e = document.createElement(tag); if(cls) e.className = cls; if(text != null) e.textContent = text; return e; }
-/* ================= completion code (keep identical in worksheet.html and verify.html) ================= */
+/* ================= completion code (keep identical in 3-1 Practice.html and verify.html) ================= */
 var CODE_SALT = 'ws-3-1-systems|v1';
 var B32 = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
 function nameKey(s){ return String(s).toLowerCase().replace(/[^a-z0-9 ]/g, '').replace(/\s+/g, ' ').trim(); }
