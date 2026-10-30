@@ -1,0 +1,1154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Capture the Flag: Systems of Equations</title>
+<style>
+:root{
+  color-scheme: light;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  --bg:#f3f5f8; --surface:#ffffff; --text:#1b2430; --muted:#5b6778; --border:#d3dae4;
+  --accent:#0f6f8c; --accent-text:#ffffff; --accent-soft:#e3f2f7;
+  --ok:#1b8a4b; --okbg:#e5f6ec; --bad:#c23a3a; --badbg:#fbe9e9;
+  --blue:#1f6fd6; --red:#d6402f; --green:#1b8a4b; --gold:#e0a800;
+  --grid:#e3e8ef; --axis:#7d8896; --canvasbg:#ffffff;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --bg:#12171d; --surface:#1b222b; --text:#e8edf3; --muted:#9aa7b8; --border:#33404f;
+    --accent:#4cb8d6; --accent-text:#0b1a20; --accent-soft:#1c3440;
+    --ok:#52c985; --okbg:#173325; --bad:#ff7b7b; --badbg:#3a1d1f;
+    --blue:#5aa2ff; --red:#ff7b6b; --green:#52c985; --gold:#f2c230;
+    --grid:#2a3441; --axis:#8795a6; --canvasbg:#161d25;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --bg:#12171d; --surface:#1b222b; --text:#e8edf3; --muted:#9aa7b8; --border:#33404f;
+  --accent:#4cb8d6; --accent-text:#0b1a20; --accent-soft:#1c3440;
+  --ok:#52c985; --okbg:#173325; --bad:#ff7b7b; --badbg:#3a1d1f;
+  --blue:#5aa2ff; --red:#ff7b6b; --green:#52c985; --gold:#f2c230;
+  --grid:#2a3441; --axis:#8795a6; --canvasbg:#161d25;
+}
+html{scroll-padding-top: env(safe-area-inset-top, 0px);}
+*,*::before,*::after{box-sizing:inherit}
+body{
+  margin:0; background:var(--bg); color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  font-size:18px; line-height:1.5;
+}
+header.top{display:flex; align-items:center; gap:14px; padding:12px 20px; background:var(--surface); border-bottom:1px solid var(--border)}
+header.top .brand{font-weight:700; color:var(--accent)}
+header.top .spacer{flex:1}
+header.top .tag{color:var(--muted); font-size:.9em}
+main{max-width:1180px; margin:0 auto; padding:22px 20px 60px}
+h1{font-size:2.1em; line-height:1.15; margin:0 0 .3em}
+h2{font-size:1.4em; margin:0 0 .4em; line-height:1.2}
+p{margin:.5em 0}
+.lead{font-size:1.1em}
+.muted{color:var(--muted)}
+.btn{font:inherit; font-size:.92em; color:var(--text); background:var(--surface); border:2px solid var(--border); border-radius:8px; padding:7px 16px; cursor:pointer}
+.btn:hover:not(:disabled){border-color:var(--accent)}
+.btn:disabled{opacity:.45; cursor:default}
+.btn.primary{background:var(--accent); border-color:var(--accent); color:var(--accent-text); font-weight:600}
+.btn.armed{border-color:var(--bad); color:var(--bad); font-weight:600}
+.fld{font:inherit; color:var(--text); background:var(--surface); border:2px solid var(--border); border-radius:8px; padding:4px 8px; margin:2px 3px; max-width:100%}
+input.fld{text-align:center}
+.fld:focus{outline:3px solid var(--accent-soft); border-color:var(--accent)}
+.fld.ok{border-color:var(--ok); background:var(--okbg)}
+.fld.bad{border-color:var(--bad); background:var(--badbg)}
+.modes{display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:18px; margin:20px 0}
+.card{background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:20px 22px; display:flex; flex-direction:column; gap:8px}
+.card p{margin:0}
+.card .btn{margin-top:auto; align-self:flex-start}
+.note{padding:12px 16px; border-left:4px solid var(--accent); background:var(--accent-soft); border-radius:6px; margin:14px 0}
+.panel{background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:22px 26px}
+.banner{padding:10px 14px; border-left:4px solid var(--bad); background:var(--badbg); border-radius:6px; margin-bottom:14px}
+.banner[hidden]{display:none}
+section[hidden]{display:none}
+.field{background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:14px 18px; margin-bottom:18px}
+.lane{margin:8px 0}
+.lhead{display:flex; justify-content:space-between; font-size:.9em; margin-bottom:3px}
+.lhead b.red{color:var(--red)} .lhead b.blue{color:var(--blue)}
+.track{display:flex; align-items:center; gap:10px}
+.flag{font-size:30px; line-height:1}
+.flag.red{color:var(--red)} .flag.blue{color:var(--blue)}
+.road{position:relative; flex:1; height:30px; background:var(--accent-soft); border-radius:15px; border:1px solid var(--border)}
+.fill{position:absolute; top:0; bottom:0; border-radius:15px; opacity:.35}
+.fill.red{left:0; background:var(--red)}
+.fill.blue{right:0; background:var(--blue)}
+.runner{position:absolute; top:1px; width:26px; height:26px; border-radius:50%; border:3px solid var(--surface); transition:left .5s}
+.runner.red{background:var(--red)} .runner.blue{background:var(--blue)}
+.gamegrid{display:grid; grid-template-columns:minmax(0,1fr); gap:20px; align-items:start}
+@media (min-width:980px){ .gamegrid{grid-template-columns:minmax(0,1.7fr) minmax(0,1fr)} }
+.turn{font-weight:700; padding:8px 14px; border-radius:8px; margin-bottom:12px; background:var(--accent-soft)}
+.turn.red{border-left:6px solid var(--red)} .turn.blue{border-left:6px solid var(--blue)}
+.sysbox{display:inline-block; border:1px solid var(--border); border-radius:10px; padding:8px 22px; margin:6px 0 10px; background:var(--bg)}
+.eq{font-size:1.25em; font-weight:600; padding:2px 0}
+.row{margin:10px 0}
+.eqs{font-weight:600; white-space:nowrap}
+.actions{display:flex; flex-wrap:wrap; gap:10px; margin-top:16px}
+.msg{margin-top:12px; min-height:1.5em; color:var(--muted)}
+.msg.good{color:var(--ok); font-weight:600}
+.msg.warn{color:var(--bad); font-weight:600}
+.hbody{margin-top:14px; padding:14px 18px; border-left:4px solid var(--accent); background:var(--accent-soft); border-radius:6px}
+.hbody[hidden]{display:none}
+.hbody p, .hbody ol{margin:.4em 0}
+.gin{max-width:460px; cursor:crosshair; touch-action:manipulation}
+.gin.ok{border-color:var(--ok)}
+.gin.bad{border-color:var(--bad)}
+.gtools{display:flex; justify-content:space-between; align-items:center; max-width:460px; font-size:.9em; color:var(--muted); margin-top:6px}
+.gtools .dot{display:inline-block; width:12px; height:12px; border-radius:50%; margin:0 4px 0 10px; vertical-align:-1px}
+.gtools .dot:first-child{margin-left:0}
+.gtools .coord{font-weight:700; color:var(--text)}
+.hcanvas{width:100%; max-width:340px; aspect-ratio:1/1; display:block; border:2px solid var(--border); border-radius:10px; background:var(--canvasbg); margin-top:10px}
+aside .box{background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:14px 18px; margin-bottom:14px}
+aside h3{margin:0 0 6px; font-size:1.05em}
+.score{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+.score ol{margin:4px 0 0; padding-left:1.2em; font-size:.9em}
+.score .tname{font-weight:700}
+.score .tname.red{color:var(--red)} .score .tname.blue{color:var(--blue)}
+.tctl{display:flex; flex-wrap:wrap; gap:8px; align-items:center}
+#overlay{position:fixed; inset:0; z-index:20; background:rgba(0,0,0,.6); display:flex; align-items:center; justify-content:center; padding:20px}
+#overlay[hidden]{display:none}
+.win{background:var(--surface); border-radius:16px; padding:28px 34px; max-width:520px; text-align:center; border:4px solid var(--gold)}
+.win .big{font-size:2.4em; line-height:1.1}
+.win .btns{display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-top:16px}
+.joinrow{margin:12px 0}
+.rt{width:100%; border-collapse:collapse; font-size:.92em; margin:6px 0 14px}
+.rt th,.rt td{padding:6px 10px; border-bottom:1px solid var(--border); text-align:left; vertical-align:top}
+.rt th{color:var(--muted); font-size:.8em; text-transform:uppercase; letter-spacing:.04em}
+#resBody h3{margin:18px 0 6px}
+#resBody h3:first-child{margin-top:0}
+@media (max-width:620px){ body{font-size:16px} main{padding:14px 10px 50px} .panel{padding:16px} }
+</style>
+</head>
+<body>
+<header class="top">
+  <span class="brand">🚩 Capture the Flag</span>
+  <span class="tag" id="modeTag"></span>
+  <span class="spacer"></span>
+  <button class="btn" id="menuBtn" hidden>← Menu</button>
+</header>
+<main>
+
+<section id="menu">
+  <h1>Capture the Flag: Systems of Equations</h1>
+  <p class="lead">Solve problems from the 3-1 practice worksheet to move your runner across the field. Reach the other team’s flag first to capture it!</p>
+  <div class="modes">
+    <div class="card">
+      <h2>🌐 Live class game</h2>
+      <p>Everyone in class plays on their own computer. Pick Red or Blue, and every correct answer moves your team’s runner.</p>
+      <p class="muted" id="liveNote">Checking whether live play is available…</p>
+      <button class="btn primary" id="liveBtn" disabled>Open the class game</button>
+    </div>
+    <div class="card">
+      <h2>👥 Two teams, one screen</h2>
+      <p>Project it or share one computer. Red and Blue teams take turns. The team at the keyboard answers each question.</p>
+      <button class="btn primary" id="teamBtn">Start team game</button>
+    </div>
+    <div class="card">
+      <h2>🏃 Solo practice</h2>
+      <p>Race a rival runner on your own. It moves forward every 40 seconds, so answer quickly and carefully.</p>
+      <button class="btn primary" id="soloBtn">Start solo game</button>
+    </div>
+  </div>
+  <div class="note"><b>How it works.</b> Each question comes from the worksheet. Fill in your work, then press <b>Check answer</b>. A correct answer moves your runner one step. A wrong answer tags you and you wait a few seconds. <b>Help</b> gives a hint first, and another press shows the full solution, but you don’t earn a step on that question. Once you’ve seen every worksheet problem, you’ll get new similar problems with different numbers.</div>
+</section>
+
+<section id="join" hidden>
+  <div class="panel">
+    <h2>Join the class game</h2>
+    <p class="muted" id="joinInfo"></p>
+    <div class="joinrow">Your name: <input class="fld" id="jname" type="text" maxlength="20" autocomplete="off" placeholder="First name" style="width:18ch;text-align:left"></div>
+    <div class="joinrow">Your team: <select class="fld" id="jteam"><option value="auto">Surprise me (keeps teams balanced)</option><option value="red">Red</option><option value="blue">Blue</option></select></div>
+    <div class="actions">
+      <button class="btn primary" id="joinGo">Join game</button>
+      <button class="btn" id="watchBtn">Watch the scoreboard</button>
+      <button class="btn" id="joinBack">← Back</button>
+    </div>
+    <p class="msg" id="joinMsg" role="status"></p>
+  </div>
+</section>
+
+<section id="game" hidden>
+  <div class="banner" id="banner" hidden></div>
+  <div class="field">
+    <div class="lane">
+      <div class="lhead"><b class="red" id="lnRed"></b><span id="lcRed"></span></div>
+      <div class="track"><span class="flag red" aria-label="Red flag">⚑</span><div class="road"><div class="fill red" id="fillRed"></div><span class="runner red" id="runRed"></span></div><span class="flag blue" aria-label="Blue flag">⚑</span></div>
+    </div>
+    <div class="lane">
+      <div class="lhead"><b class="blue" id="lnBlue"></b><span id="lcBlue"></span></div>
+      <div class="track"><span class="flag red" aria-label="Red flag">⚑</span><div class="road"><div class="fill blue" id="fillBlue"></div><span class="runner blue" id="runBlue"></span></div><span class="flag blue" aria-label="Blue flag">⚑</span></div>
+    </div>
+    <p class="muted" id="fieldCap" style="margin-bottom:0"></p>
+  </div>
+  <div class="gamegrid">
+    <div class="panel" id="qpanel">
+      <div class="turn" id="turn" hidden></div>
+      <h2 id="qtitle"></h2>
+      <div id="qbody"></div>
+      <div class="actions">
+        <button class="btn primary" id="checkBtn">Check answer</button>
+        <button class="btn" id="helpBtn">💡 Help</button>
+        <button class="btn" id="restartBtn">↻ Restart</button>
+        <button class="btn primary" id="nextBtn" hidden>Next question →</button>
+      </div>
+      <div class="msg" id="qmsg" role="status"></div>
+      <div class="hbody" id="qhelp" hidden></div>
+    </div>
+    <aside>
+      <div class="box" id="sbBox"><h3 id="sbTitle">Scoreboard</h3><div id="sb"></div></div>
+      <div class="box" id="statsBox"><h3>Your stats</h3><div id="stats"></div></div>
+      <div class="box" id="resBox"><button class="btn" id="resBtn">📊 View results</button></div>
+      <div class="box" id="tctl" hidden></div>
+    </aside>
+  </div>
+</section>
+
+<section id="results" hidden>
+  <div class="panel">
+    <h2 id="resTitle">Results</h2>
+    <div id="resBody"></div>
+    <div class="actions"><button class="btn" id="resBack">← Back</button></div>
+  </div>
+</section>
+
+</main>
+
+<div id="overlay" hidden><div class="win" role="dialog" aria-modal="true" aria-labelledby="winTitle">
+  <div class="big" id="winIcon">🏆</div>
+  <h2 id="winTitle"></h2>
+  <p id="winText"></p>
+  <div class="btns" id="winBtns"></div>
+</div></div>
+
+<script>
+(function(){
+'use strict';
+
+/* ================= helpers ================= */
+var $ = function(id){ return document.getElementById(id); };
+function el(tag, cls, text){ var e = document.createElement(tag); if(cls) e.className = cls; if(text != null) e.textContent = text; return e; }
+function cap(t){ return t === 'red' ? 'Red' : 'Blue'; }
+function other(t){ return t === 'red' ? 'blue' : 'red'; }
+function fmt(n){ n = Math.round(n*1e6)/1e6; return n < 0 ? '−' + (-n) : String(n); }
+function norm(s){ return String(s).toLowerCase().replace(/[−–]/g,'-').replace(/\s+/g,'').replace(/[()]/g,''); }
+function numOf(s){
+  s = norm(s); if(s === '') return NaN;
+  if(/^-?\d*\.?\d+$/.test(s)) return parseFloat(s);
+  var m = /^(-?\d+)\/(\d+)$/.exec(s); if(m && +m[2] !== 0) return (+m[1])/(+m[2]);
+  return NaN;
+}
+function near(sv, target, tol){ var v = numOf(sv); return !isNaN(v) && Math.abs(v - target) < tol; }
+function pairText(p){ return '(' + fmt(p[0]) + ', ' + fmt(p[1]) + ')'; }
+function term(c, v){ var a = Math.abs(c); return a === 1 ? '(' + v + ')' : a + '(' + v + ')'; }
+function expr(a, b, x, y){
+  var s = '';
+  [[a,x],[b,y]].forEach(function(p){
+    var c = p[0]; if(c === 0) return;
+    var body = term(c, fmt(p[1]));
+    if(s === '') s = (c < 0 ? '−' : '') + body; else s += (c < 0 ? ' − ' : ' + ') + body;
+  });
+  return s;
+}
+function shuffle(a){ a = a.slice(); for(var i = a.length - 1; i > 0; i--){ var j = Math.floor(Math.random()*(i+1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+
+/* ================= question bank (from the 3-1 worksheet) ================= */
+var TYPE_NAME = {one:'One solution', none:'No solution', inf:'Infinite solutions'};
+var Q = [
+  {id:'1a', ref:'1', kind:'pair', pt:[10,6], eqs:[{t:'x + y = 16',a:1,b:1,c:16},{t:'y − x = 2',a:-1,b:1,c:2}]},
+  {id:'1b', ref:'1', kind:'pair', pt:[3,4],  eqs:[{t:'x + y = 16',a:1,b:1,c:16},{t:'y − x = 2',a:-1,b:1,c:2}]},
+  {id:'2a', ref:'2', kind:'pair', pt:[10,6], eqs:[{t:'3x − y = 5',a:3,b:-1,c:5},{t:'x + 2y = 11',a:1,b:2,c:11}]},
+  {id:'2b', ref:'2', kind:'pair', pt:[3,4],  eqs:[{t:'3x − y = 5',a:3,b:-1,c:5},{t:'x + 2y = 11',a:1,b:2,c:11}]},
+  {id:'3',  ref:'3', kind:'pair', pt:[3,-2], eqs:[{t:'x + 7y = 25',a:1,b:7,c:25},{t:'5x + y = 11',a:5,b:1,c:11}]},
+  {id:'4',  ref:'4', kind:'pair', pt:[0,6],  eqs:[{t:'−2x − 5y = −30',a:-2,b:-5,c:-30},{t:'−4x + 4y = 24',a:-4,b:4,c:24}]},
+  {id:'5', ref:'5', kind:'graph', eqs:['2y − 2x = −14','9 = 7x + y'], lines:[{m:1,b:-7},{m:-7,b:9}], type:'one', sol:[2,-5],
+   steps:'<li>2y − 2x = −14 → add 2x: 2y = 2x − 14 → divide by 2: <b>y = x − 7</b></li><li>9 = 7x + y → subtract 7x: <b>y = −7x + 9</b></li><li>The slopes are different (1 and −7), so the lines cross once. Set them equal: x − 7 = −7x + 9, so 8x = 16 and x = 2. Then y = 2 − 7 = −5.</li>'},
+  {id:'6', ref:'6', kind:'graph', eqs:['2 = x − y','−8x − y = −7'], lines:[{m:1,b:-2},{m:-8,b:7}], type:'one', sol:[1,-1],
+   steps:'<li>2 = x − y → add y and subtract 2: <b>y = x − 2</b></li><li>−8x − y = −7 → add 8x: −y = 8x − 7 → multiply by −1: <b>y = −8x + 7</b></li><li>Different slopes (1 and −8), so one solution. Set equal: x − 2 = −8x + 7, so 9x = 9 and x = 1. Then y = 1 − 2 = −1.</li>'},
+  {id:'7', ref:'7', kind:'graph', eqs:['y = 5','2x − y = 1'], lines:[{m:0,b:5},{m:2,b:-1}], type:'one', sol:[3,5],
+   steps:'<li>y = 5 is already solved: slope <b>0</b>, y-intercept <b>5</b> (a flat line).</li><li>2x − y = 1 → subtract 2x: −y = −2x + 1 → multiply by −1: <b>y = 2x − 1</b></li><li>Different slopes, so one solution. Put y = 5 into the second line: 5 = 2x − 1, so x = 3.</li>'},
+  {id:'8', ref:'8', kind:'graph', eqs:['y = 3x − 2','15x − 5y = 10'], lines:[{m:3,b:-2},{m:3,b:-2}], type:'inf',
+   steps:'<li>y = 3x − 2 is already solved: slope <b>3</b>, y-intercept <b>−2</b>.</li><li>15x − 5y = 10 → subtract 15x: −5y = −15x + 10 → divide by −5: <b>y = 3x − 2</b></li><li>Both equations are exactly the same line, so every point on the line is a solution: infinitely many.</li>'},
+  {id:'9', ref:'9', kind:'graph', eqs:['x − 2y = −6','y = (1/2)x − 8'], lines:[{m:0.5,b:3},{m:0.5,b:-8}], type:'none',
+   steps:'<li>x − 2y = −6 → subtract x: −2y = −x − 6 → divide by −2: <b>y = (1/2)x + 3</b></li><li>y = (1/2)x − 8 is already solved: slope <b>1/2</b>, y-intercept <b>−8</b>.</li><li>Same slope (1/2) but different y-intercepts (3 and −8), so the lines are parallel and never meet: no solution.</li>'},
+  {id:'10', ref:'10', kind:'graph', eqs:['3x − 5y = 20','y = 10x − 4'], lines:[{m:0.6,b:-4},{m:10,b:-4}], type:'one', sol:[0,-4],
+   steps:'<li>3x − 5y = 20 → subtract 3x: −5y = −3x + 20 → divide by −5: <b>y = (3/5)x − 4</b></li><li>y = 10x − 4 is already solved: slope <b>10</b>, y-intercept <b>−4</b>.</li><li>Different slopes, so one solution. Both lines have y-intercept −4, so they cross on the y-axis at (0, −4).</li>'},
+  {id:'11', ref:'11', kind:'graph', eqs:['y = (1/4)x + 1','y = (5/4)x − 3'], lines:[{m:0.25,b:1},{m:1.25,b:-3}], type:'one', sol:[4,2],
+   steps:'<li>Both equations are already in slope-intercept form: slopes <b>1/4</b> and <b>5/4</b>, y-intercepts <b>1</b> and <b>−3</b>.</li><li>Different slopes, so one solution. Set equal: (1/4)x + 1 = (5/4)x − 3, so 4 = x. Then y = (1/4)(4) + 1 = 2.</li>'},
+  {id:'12', ref:'12', kind:'graph', eqs:['x − 4y = −4','y = (1/4)x − 2'], lines:[{m:0.25,b:1},{m:0.25,b:-2}], type:'none',
+   steps:'<li>x − 4y = −4 → subtract x: −4y = −x − 4 → divide by −4: <b>y = (1/4)x + 1</b></li><li>y = (1/4)x − 2 is already solved: slope <b>1/4</b>, y-intercept <b>−2</b>.</li><li>Same slope (1/4), different y-intercepts (1 and −2): parallel lines, no solution.</li>'},
+  {id:'13', ref:'13', kind:'graph', eqs:['y = (1/3)x + 3','4x − 12y = −36'], lines:[{m:1/3,b:3},{m:1/3,b:3}], type:'inf',
+   steps:'<li>y = (1/3)x + 3 is already solved: slope <b>1/3</b>, y-intercept <b>3</b>.</li><li>4x − 12y = −36 → subtract 4x: −12y = −4x − 36 → divide by −12: <b>y = (1/3)x + 3</b></li><li>Same line, so there are infinitely many solutions.</li>'}
+];
+
+
+/* ================= similar problems (generated, same style as the worksheet) ================= */
+function prng(seed){ var a = seed >>> 0; return function(){ a = (a + 0x6D2B79F5) >>> 0; var t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+function gcd(a, b){ a = Math.abs(a); b = Math.abs(b); while(b){ var t = a % b; a = b; b = t; } return a || 1; }
+function lin(a, b){
+  var s = '';
+  if(a !== 0) s = a === 1 ? 'x' : a === -1 ? '−x' : fmt(a) + 'x';
+  if(b !== 0){
+    var by = Math.abs(b) === 1 ? 'y' : Math.abs(b) + 'y';
+    if(s === '') s = (b < 0 ? '−' : '') + by; else s += (b < 0 ? ' − ' : ' + ') + by;
+  }
+  return s;
+}
+function eqText(a, b, c, rev){ return rev ? fmt(c) + ' = ' + lin(a, b) : lin(a, b) + ' = ' + fmt(c); }
+function slopeTerm(p, q){
+  if(q === 1) return p === 1 ? 'x' : p === -1 ? '−x' : p === 0 ? '' : fmt(p) + 'x';
+  return (p < 0 ? '−' : '') + '(' + Math.abs(p) + '/' + q + ')x';
+}
+function slopeInt(p, q, b){
+  var st = slopeTerm(p, q), s = 'y = ';
+  if(!st) return s + fmt(b);
+  s += st; if(b > 0) s += ' + ' + b; else if(b < 0) s += ' − ' + (-b);
+  return s;
+}
+function fracStr(p, q){ return q === 1 ? fmt(p) : (p < 0 ? '−' : '') + Math.abs(p) + '/' + q; }
+function rhsText(ax, c){
+  var s = ''; if(ax !== 0) s = ax === 1 ? 'x' : ax === -1 ? '−x' : fmt(ax) + 'x';
+  if(c !== 0 || s === '') s = (s === '') ? fmt(c) : s + (c > 0 ? ' + ' : ' − ') + Math.abs(c);
+  return s;
+}
+function siMeta(p, q, b){ return {form:'si', text:slopeInt(p, q, b), sp:p, sq:q, sb:b}; }
+function stdMeta(p, q, b, k, rev){
+  var a = k*p, bb = -k*q, c = -k*q*b;
+  return {form:'std', text:eqText(a, bb, c, rev), a:a, b:bb, c:c, sp:p, sq:q, sb:b};
+}
+function stepLi(m){
+  if(m.form === 'si') return '<li>' + m.text + ' is already solved for y: slope <b>' + fracStr(m.sp, m.sq) + '</b>, y-intercept <b>' + fmt(m.sb) + '</b>.</li>';
+  var div = (m.b === 1) ? '' : ' → divide every term by ' + fmt(m.b);
+  return '<li>' + m.text + ' → ' + lin(0, m.b) + ' = ' + rhsText(-m.a, m.c) + div + ': <b>' + slopeInt(m.sp, m.sq, m.sb) + '</b></li>';
+}
+function okLine(p, q, b){ return q <= 10 && Math.abs(b) <= 10 && Math.abs(b + p) <= 10; }
+function origOf(id){ return Q.filter(function(x){ return x.id === id; })[0]; }
+function finishGraph(base, seed, metas, type, sol){
+  var m1 = metas[0], m2 = metas[1], fin;
+  if(type === 'one') fin = '<li>The slopes are different (' + fracStr(m1.sp, m1.sq) + ' and ' + fracStr(m2.sp, m2.sq) + '), so the lines cross once. Set the right sides equal: ' + slopeInt(m1.sp, m1.sq, m1.sb).slice(4) + ' = ' + slopeInt(m2.sp, m2.sq, m2.sb).slice(4) + '. Solving gives x = ' + fmt(sol[0]) + ', and then y = ' + fmt(sol[1]) + '.</li>';
+  else if(type === 'none') fin = '<li>Same slope (' + fracStr(m1.sp, m1.sq) + ') but different y-intercepts (' + fmt(m1.sb) + ' and ' + fmt(m2.sb) + '): the lines are parallel and never meet, so there is no solution.</li>';
+  else fin = '<li>Both equations simplify to ' + slopeInt(m1.sp, m1.sq, m1.sb) + ', the same line, so every point on it is a solution: infinitely many.</li>';
+  return {id:base + '~' + seed, ref:origOf(base).ref, kind:'graph', variant:true, base:base,
+    eqs:metas.map(function(m){ return m.text; }), lines:metas.map(function(m){ return {m:m.sp/m.sq, b:m.sb}; }),
+    type:type, sol:sol, steps:metas.map(stepLi).join('') + fin};
+}
+var PAIR_PATTERN = {'1a':[true,false], '1b':[false,false], '2a':[false,false], '2b':[true,true], '3':[false,false], '4':[true,true]};
+function makeVariant(base, seed){
+  var o = origOf(base); if(!o) return null;
+  var rnd = prng(seed);
+  function ri(a, b){ return a + Math.floor(rnd()*(b - a + 1)); }
+  function pk(arr){ return arr[Math.floor(rnd()*arr.length)]; }
+  function nzr(a, b){ var v; do{ v = ri(a, b); }while(v === 0); return v; }
+  var t, metas;
+  if(PAIR_PATTERN[base]){
+    var pat = PAIR_PATTERN[base];
+    for(t = 0; t < 500; t++){
+      var x = ri(-6, 9), y = ri(-6, 9); if(x === 0 && y === 0) continue;
+      var eqs = [];
+      for(var i = 0; i < 2; i++){
+        var a = nzr(-5, 5), b = nzr(-5, 5), c0 = a*x + b*y, c = pat[i] ? c0 : c0 + pk([-4,-3,-2,-1,1,2,3,4]);
+        eqs.push({a:a, b:b, c:c, t:eqText(a, b, c, false)});
+      }
+      if(eqs[0].a*eqs[1].b - eqs[1].a*eqs[0].b === 0) continue;
+      if(Math.abs(eqs[0].c) > 60 || Math.abs(eqs[1].c) > 60) continue;
+      return {id:base + '~' + seed, ref:o.ref, kind:'pair', variant:true, base:base, pt:[x, y], eqs:eqs};
+    }
+    return null;
+  }
+  var sx, sy, m1, m2, b1, b2, p, q, b, n, k, p1, p2, tt;
+  for(t = 0; t < 800; t++){
+    if(base === '5' || base === '6' || base === '7'){
+      sx = ri(-5, 5); sy = ri(-8, 8);
+      if(base === '7'){ m1 = 0; m2 = nzr(-5, 5); } else { m1 = nzr(-5, 5); m2 = nzr(-5, 5); if(m1 === m2) continue; }
+      b1 = sy - m1*sx; b2 = sy - m2*sx;
+      if(!okLine(m1, 1, b1) || !okLine(m2, 1, b2)) continue;
+      if(base === '5') metas = [stdMeta(m1, 1, b1, pk([-2,-3]), false), stdMeta(m2, 1, b2, -1, true)];
+      else if(base === '6') metas = [stdMeta(m1, 1, b1, 1, true), stdMeta(m2, 1, b2, pk([1,2]), false)];
+      else metas = [siMeta(0, 1, b1), stdMeta(m2, 1, b2, pk([1,-1]), false)];
+      return finishGraph(base, seed, metas, 'one', [sx, sy]);
+    }
+    if(base === '10'){
+      q = pk([2,3,4,5]); p = nzr(-7, 7); if(gcd(p, q) !== 1) continue;
+      b = nzr(-8, 8); n = nzr(-6, 6); if(n*q === p) continue;
+      if(!okLine(p, q, b) || !okLine(n, 1, b)) continue;
+      return finishGraph(base, seed, [stdMeta(p, q, b, pk([1,-1]), false), siMeta(n, 1, b)], 'one', [0, b]);
+    }
+    if(base === '11'){
+      q = pk([2,3,4]); p1 = nzr(-7, 7); p2 = nzr(-7, 7);
+      if(p1 === p2 || gcd(p1, q) !== 1 || gcd(p2, q) !== 1) continue;
+      tt = pk([-2,-1,1,2]); sx = q*tt; sy = ri(-6, 6); b1 = sy - p1*tt; b2 = sy - p2*tt;
+      if(!okLine(p1, q, b1) || !okLine(p2, q, b2)) continue;
+      return finishGraph(base, seed, [siMeta(p1, q, b1), siMeta(p2, q, b2)], 'one', [sx, sy]);
+    }
+    if(base === '9' || base === '12'){
+      q = base === '9' ? pk([2,3]) : pk([3,4,5]); p = nzr(-5, 5); if(gcd(p, q) !== 1) continue;
+      b1 = ri(-8, 8); b2 = ri(-8, 8); if(b1 === b2) continue;
+      if(!okLine(p, q, b1) || !okLine(p, q, b2)) continue;
+      return finishGraph(base, seed, [stdMeta(p, q, b1, 1, false), siMeta(p, q, b2)], 'none', null);
+    }
+    if(base === '8'){
+      m1 = nzr(-4, 4); b = nzr(-8, 8); if(!okLine(m1, 1, b)) continue;
+      return finishGraph(base, seed, [siMeta(m1, 1, b), stdMeta(m1, 1, b, pk([2,3,4,5,-2,-3]), false)], 'inf', null);
+    }
+    if(base === '13'){
+      q = pk([2,3,4]); p = nzr(-5, 5); if(gcd(p, q) !== 1) continue;
+      b = nzr(-8, 8); if(!okLine(p, q, b)) continue;
+      return finishGraph(base, seed, [siMeta(p, q, b), stdMeta(p, q, b, pk([2,3,4,-2,-3]), false)], 'inf', null);
+    }
+  }
+  return null;
+}
+var SEEN = {};
+function takeNext(){
+  while(G.qi < G.order.length){
+    var cand = Q[G.order[G.qi++]];
+    if(!SEEN[cand.id]){ SEEN[cand.id] = true; return cand; }
+  }
+  for(var tries = 0; tries < 20; tries++){
+    if(!G.vorder || G.vi >= G.vorder.length){ G.vorder = shuffle(Q.map(function(x){ return x.id; })); G.vi = 0; }
+    var v = makeVariant(G.vorder[G.vi++], Math.floor(Math.random()*1e9) + 1);
+    if(v) return v;
+  }
+  return Q[Math.floor(Math.random()*Q.length)];
+}
+
+/* ================= game state ================= */
+var G = {mode:null, dist:10, teams:{red:0,blue:0}, turn:'red', myTeam:'blue', order:[], qi:0, asked:0,
+         q:null, state:'ask', helpLevel:0, tagUntil:0, stats:{correct:0,wrong:0,help:0}, ended:false, spectate:false};
+var botTimer = null, tagTimer = null;
+
+function show(which){
+  ['menu','join','game','results'].forEach(function(s){ $(s).hidden = (s !== which); });
+  $('menuBtn').hidden = (which === 'menu');
+  if(which === 'menu') $('modeTag').textContent = '';
+}
+
+/* ================= question rendering ================= */
+function inp(name, w, ph){ return '<input class="fld" type="text" data-f="'+name+'" autocomplete="off" autocapitalize="off" spellcheck="false" style="width:'+w+'ch"'+(ph?' placeholder="'+ph+'"':'')+' aria-label="'+name+'">'; }
+function sysBox(list){ return '<div class="sysbox">' + list.map(function(t){ return '<div class="eq">'+t+'</div>'; }).join('') + '</div>'; }
+
+function pairHtml(q){
+  var h = '<p class="lead">Is the point <b>'+pairText(q.pt)+'</b> a solution of this system?</p>' + sysBox(q.eqs.map(function(e){ return e.t; }));
+  h += '<p>Plug in x = '+fmt(q.pt[0])+' and y = '+fmt(q.pt[1])+'. Compute the <b>left side</b> of each equation:</p>';
+  q.eqs.forEach(function(e, i){
+    h += '<div class="row"><span class="eqs">'+e.t+'</span> → left side = ' + inp('v'+i, 6) + ' <span class="muted">(the right side is '+fmt(e.c)+')</span></div>';
+  });
+  h += '<div class="row">So is '+pairText(q.pt)+' a solution? <select class="fld" data-f="final" aria-label="Is it a solution"><option value="">Choose…</option><option>Yes</option><option>No</option></select></div>';
+  return h;
+}
+function graphHtml(q){
+  var h = '<p class="lead">Solve this system by graphing.</p>' + sysBox(q.eqs);
+  h += '<p><b>Step 1: graph both equations.</b> Click two points on Equation 1 (blue), then two points on Equation 2 (red). Tip: solve for y first.</p>' +
+    '<div class="gtools"><span><i class="dot" style="background:var(--blue)"></i>Equation 1<i class="dot" style="background:var(--red)"></i>Equation 2</span><span class="coord" id="gcoord"></span></div>' +
+    '<canvas class="hcanvas gin" id="gcanvas" aria-label="Coordinate grid. Click to place points for each line."></canvas>' +
+    '<div class="actions" style="margin-top:8px"><button class="btn" id="gundo" type="button">Undo point</button><button class="btn" id="gclear" type="button">Clear graph</button></div>';
+  h += '<p style="margin-top:18px"><b>Step 2: show your work.</b> Write each equation in slope-intercept form (type fractions like 1/4 or decimals):</p>';
+  q.eqs.forEach(function(e, i){
+    h += '<div class="row"><span class="eqs">Equation '+(i+1)+':</span> y = ' + inp('m'+i, 6, 'slope') + ' x + ' + inp('b'+i, 6, 'intercept') + '</div>';
+  });
+  h += '<div class="row">How many solutions? <select class="fld" data-f="type" aria-label="How many solutions"><option value="">Choose…</option><option>One solution</option><option>No solution</option><option>Infinite solutions</option></select></div>';
+  h += '<div class="row">If there is one solution, write it as an ordered pair: ' + inp('sol', 9, '(  ,  )') + '</div>';
+  return h;
+}
+function pairSolutionHtml(q){
+  var truth = q.eqs.every(function(e){ return e.a*q.pt[0] + e.b*q.pt[1] === e.c; });
+  var h = '<p><b>Plug in '+pairText(q.pt)+':</b></p><ol>';
+  q.eqs.forEach(function(e){
+    var v = e.a*q.pt[0] + e.b*q.pt[1];
+    h += '<li>'+e.t+' → '+expr(e.a, e.b, q.pt[0], q.pt[1])+' = <b>'+fmt(v)+'</b>. Compare with '+fmt(e.c)+': <b>'+(v === e.c ? 'TRUE' : 'FALSE')+'</b></li>';
+  });
+  h += '</ol><p>' + (truth ? 'Both equations are true, so '+pairText(q.pt)+' <b>is</b> a solution.' : 'At least one equation is false, so '+pairText(q.pt)+' is <b>NOT</b> a solution.') + '</p>';
+  return h;
+}
+function graphSolutionHtml(q){
+  var ans = q.type === 'one' ? 'One solution: <b>'+pairText(q.sol)+'</b>' : '<b>'+TYPE_NAME[q.type]+'</b>';
+  return '<p><b>Worked solution:</b></p><ol>' + q.steps + '</ol><p>Answer: ' + ans + '.</p><canvas class="hcanvas" id="hcanvas" aria-label="Graph of both lines"></canvas>';
+}
+function hintHtml(q){
+  var warn = '<p class="muted">Press Help again for the full solution. You won’t earn a step on this question if you do.</p>';
+  if(q.kind === 'pair') return '<p><b>Hint:</b> replace x and y with the numbers from the point, do the arithmetic, and compare each result with the right side of that equation. The point is a solution only if <b>both</b> equations come out true.</p>' + warn;
+  return '<p><b>Hint:</b> solve each equation for y so it looks like y = mx + b. Then compare the lines: <b>different slopes</b> means one solution, <b>same slope but different y-intercepts</b> means no solution, and <b>the same slope and the same intercept</b> means infinite solutions.</p>' + warn;
+}
+
+function drawLines(cv, q){ drawBoard(cv, q, {answer:true}); }
+function drawBoard(cv, q, o){
+  if(!cv || !cv.getContext) return;
+  var ctx = cv.getContext('2d'); if(!ctx) return;
+  var size = cv.clientWidth || 300, dpr = window.devicePixelRatio || 1;
+  cv.width = cv.height = Math.round(size*dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  var L = 11, sc = size/(2*L);
+  function X(x){ return (x+L)*sc; } function Y(y){ return (L-y)*sc; }
+  var cs = getComputedStyle(document.documentElement);
+  function css(n){ return cs.getPropertyValue(n).trim(); }
+  ctx.clearRect(0,0,size,size);
+  ctx.lineWidth = 1; ctx.strokeStyle = css('--grid');
+  for(var i = -10; i <= 10; i++){
+    ctx.beginPath(); ctx.moveTo(X(i),0); ctx.lineTo(X(i),size); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0,Y(i)); ctx.lineTo(size,Y(i)); ctx.stroke();
+  }
+  ctx.strokeStyle = css('--axis'); ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(X(0),0); ctx.lineTo(X(0),size); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0,Y(0)); ctx.lineTo(size,Y(0)); ctx.stroke();
+  ctx.fillStyle = css('--axis'); ctx.font = Math.max(9, size/36) + 'px sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for(var t = -10; t <= 10; t += 5){ if(t !== 0) ctx.fillText(String(t).replace('-','−'), X(t), Y(0)+3); }
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  for(var u = -10; u <= 10; u += 5){ if(u !== 0) ctx.fillText(String(u).replace('-','−'), X(0)-4, Y(u)); }
+  function seg(ln, color, w, dash){
+    ctx.strokeStyle = color; ctx.lineWidth = w; ctx.setLineDash(dash || []);
+    ctx.beginPath(); ctx.moveTo(X(-L), Y(ln.m*-L + ln.b)); ctx.lineTo(X(L), Y(ln.m*L + ln.b)); ctx.stroke(); ctx.setLineDash([]);
+  }
+  var same = Math.abs(q.lines[0].m - q.lines[1].m) < 1e-9 && Math.abs(q.lines[0].b - q.lines[1].b) < 1e-9;
+  if(o.answer){
+    seg(q.lines[0], css('--blue'), same ? 6 : 3);
+    seg(q.lines[1], css('--red'), same ? 2 : 3, same ? [7,6] : null);
+  }
+  var P = o.pts || [];
+  function pseg(p1, p2, color){
+    ctx.strokeStyle = color; ctx.lineWidth = 3; ctx.beginPath();
+    if(p1[0] === p2[0]){ ctx.moveTo(X(p1[0]), Y(-L)); ctx.lineTo(X(p1[0]), Y(L)); }
+    else { var m = (p2[1]-p1[1])/(p2[0]-p1[0]); ctx.moveTo(X(-L), Y(p1[1]+m*(-L-p1[0]))); ctx.lineTo(X(L), Y(p1[1]+m*(L-p1[0]))); }
+    ctx.stroke();
+  }
+  if(P.length >= 2) pseg(P[0], P[1], css('--blue'));
+  if(P.length >= 4) pseg(P[2], P[3], css('--red'));
+  ctx.font = 'bold ' + Math.max(10, size/32) + 'px sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+  P.forEach(function(pt, i){
+    ctx.fillStyle = i < 2 ? css('--blue') : css('--red'); ctx.beginPath(); ctx.arc(X(pt[0]), Y(pt[1]), 6, 0, 6.2832); ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = css('--canvasbg'); ctx.stroke();
+    ctx.fillStyle = css('--text'); ctx.fillText(pairText(pt), X(pt[0]) + 9, Y(pt[1]) - 6);
+  });
+  if((o.answer || o.ring) && q.type === 'one'){
+    ctx.strokeStyle = css('--green'); ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(X(q.sol[0]), Y(q.sol[1]), 9, 0, 6.2832); ctx.stroke();
+    ctx.fillStyle = css('--text'); ctx.font = 'bold ' + Math.max(10, size/30) + 'px sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+    ctx.fillText(pairText(q.sol), X(q.sol[0]) + 12, Y(q.sol[1]) - 6);
+  }
+}
+function showCanvas(q){ if(q.kind !== 'graph') return; requestAnimationFrame(function(){ drawLines($('hcanvas'), q); }); }
+
+/* ================= student graph ================= */
+function lineFrom(a, b){ if(a[0] === b[0]) return null; var m = (b[1]-a[1])/(b[0]-a[0]); return {m:m, b:a[1]-m*a[0]}; }
+function redrawInput(ring){ var cv = $('gcanvas'); if(cv && G.q && G.q.kind === 'graph') drawBoard(cv, G.q, {pts:G.pts, answer:false, ring:!!ring}); }
+function bindGraph(){
+  var cv = $('gcanvas'); if(!cv) return;
+  function toGrid(e){
+    var r = cv.getBoundingClientRect(), L = 11;
+    var x = Math.round(((e.clientX - r.left)/r.width)*2*L - L), y = Math.round(L - ((e.clientY - r.top)/r.height)*2*L);
+    return [Math.max(-10, Math.min(10, x)), Math.max(-10, Math.min(10, y))];
+  }
+  cv.addEventListener('click', function(e){
+    if(G.state !== 'ask' || G.ended || G.spectate) return;
+    var P = G.pts, g = toGrid(e);
+    if(P.length >= 4){ say('You already have 4 points. Use Undo or Clear to change them.', ''); return; }
+    if(P.length % 2 === 1 && P[P.length-1][0] === g[0] && P[P.length-1][1] === g[1]) return;
+    P.push(g); cv.classList.remove('ok','bad'); redrawInput();
+  });
+  cv.addEventListener('pointermove', function(e){ var g = toGrid(e); $('gcoord').textContent = pairText(g); });
+  cv.addEventListener('pointerleave', function(){ $('gcoord').textContent = ''; });
+  $('gundo').onclick = function(){ if(G.state !== 'ask') return; G.pts.pop(); cv.classList.remove('ok','bad'); redrawInput(); };
+  $('gclear').onclick = function(){ if(G.state !== 'ask') return; G.pts = []; cv.classList.remove('ok','bad'); redrawInput(); };
+  requestAnimationFrame(function(){ redrawInput(); });
+}
+
+/* ================= answer checking ================= */
+function field(name){ return $('qbody').querySelector('[data-f="'+name+'"]'); }
+function evaluate(q){
+  var marks = {}, allOk = true, blank = false;
+  function mark(n, ok){ marks[n] = ok; if(!ok) allOk = false; }
+  if(q.kind === 'pair'){
+    q.eqs.forEach(function(e, i){
+      var v = e.a*q.pt[0] + e.b*q.pt[1], f = field('v'+i);
+      if(!f.value.trim()){ blank = true; mark('v'+i, false); } else mark('v'+i, near(f.value, v, 1e-9));
+    });
+    var truth = q.eqs.every(function(e){ return e.a*q.pt[0] + e.b*q.pt[1] === e.c; });
+    var fin = field('final').value;
+    if(!fin){ blank = true; mark('final', false); } else mark('final', (fin === 'Yes') === truth);
+  } else {
+    q.lines.forEach(function(Ln, i){
+      [['m',Ln.m],['b',Ln.b]].forEach(function(p){
+        var nm = p[0] + i, f = field(nm);
+        if(!f.value.trim()){ blank = true; mark(nm, false); } else mark(nm, near(f.value, p[1], 0.006));
+      });
+    });
+    var P = G.pts || [];
+    if(P.length < 4){ blank = true; mark('graph', false); }
+    else {
+      var ls = [lineFrom(P[0], P[1]), lineFrom(P[2], P[3])];
+      var sameLn = function(a, t){ return a && Math.abs(a.m - t.m) < 1e-9 && Math.abs(a.b - t.b) < 1e-9; };
+      var uniq = q.lines.filter(function(t, i, arr){ return arr.findIndex(function(u){ return sameLn(u, t); }) === i; });
+      var idx = ls.map(function(a){ return uniq.findIndex(function(t){ return sameLn(a, t); }); });
+      var gok = idx.every(function(i){ return i >= 0; }) && uniq.every(function(t, i){ return idx.indexOf(i) >= 0; });
+      mark('graph', gok);
+    }
+    var ts = field('type').value;
+    if(!ts){ blank = true; mark('type', false); } else mark('type', ts === TYPE_NAME[q.type]);
+    if(q.type === 'one'){
+      var sf = field('sol');
+      if(!sf.value.trim()){ blank = true; mark('sol', false); } else mark('sol', norm(sf.value) === q.sol[0] + ',' + q.sol[1]);
+    }
+  }
+  Object.keys(marks).forEach(function(n){
+    var f = (n === 'graph') ? $('gcanvas') : field(n); if(!f) return;
+    f.classList.toggle('ok', marks[n] && !blank); f.classList.toggle('bad', !marks[n] && !blank);
+  });
+  if(blank) Object.keys(marks).forEach(function(n){ var f = (n === 'graph') ? $('gcanvas') : field(n); if(f) f.classList.remove('ok','bad'); });
+  return {ok: allOk && !blank, blank: blank};
+}
+
+/* ================= game flow ================= */
+function say(text, cls){ var m = $('qmsg'); m.textContent = text; m.className = 'msg' + (cls ? ' ' + cls : ''); }
+
+function renderField(){
+  ['red','blue'].forEach(function(t){
+    var p = Math.min(1, G.teams[t] / G.dist), pos = (t === 'red') ? p : 1 - p;
+    $('run'+cap(t)).style.left = 'calc((100% - 26px) * ' + pos + ')';
+    $('fill'+cap(t)).style.width = 'calc(13px + (100% - 26px) * ' + p + ')';
+    $('lc'+cap(t)).textContent = G.teams[t] + ' / ' + G.dist + ' steps';
+  });
+}
+function setLabels(){
+  var a = $('lnRed'), b = $('lnBlue'), cap_ = $('fieldCap');
+  if(G.mode === 'solo'){
+    a.textContent = 'Rival runner (Red)'; b.textContent = 'Your runner (Blue)';
+    cap_.textContent = 'Your Blue runner heads left to capture the red flag. The rival Red runner heads right toward the blue flag and moves by itself every 40 seconds.';
+  } else if(G.mode === 'team'){
+    a.textContent = 'Red team’s runner'; b.textContent = 'Blue team’s runner';
+    cap_.textContent = 'Red heads right to capture the blue flag. Blue heads left to capture the red flag. Teams take turns.';
+  } else {
+    a.textContent = 'Red team'; b.textContent = 'Blue team';
+    cap_.textContent = 'Red heads right to capture the blue flag. Blue heads left to capture the red flag. Every correct answer from anyone on the team moves the runner.';
+  }
+}
+function updateButtons(){
+  var tagged = Date.now() < G.tagUntil;
+  var canAsk = !G.ended && G.state === 'ask' && !G.spectate;
+  $('checkBtn').disabled = !canAsk || tagged;
+  $('helpBtn').disabled = !canAsk;
+  $('restartBtn').disabled = false;
+  $('checkBtn').textContent = tagged ? 'Tagged! ' + Math.ceil((G.tagUntil - Date.now())/1000) + 's' : 'Check answer';
+}
+function startTag(){
+  G.tagUntil = Date.now() + 8000;
+  clearInterval(tagTimer);
+  tagTimer = setInterval(function(){
+    updateButtons();
+    if(Date.now() >= G.tagUntil){ clearInterval(tagTimer); say('You’re back in the game. Fix the red boxes and check again!', ''); }
+  }, 250);
+  updateButtons();
+}
+function nextLabel(){ return G.mode === 'team' ? 'Pass to ' + cap(other(G.turn)) + ' team →' : 'Next question →'; }
+function afterQuestion(){
+  G.state = 'done';
+  $('nextBtn').hidden = G.ended; $('nextBtn').textContent = nextLabel();
+  updateButtons();
+}
+function nextQuestion(){
+  G.q = takeNext(); G.asked++; G.state = 'ask'; G.helpLevel = 0; G.pts = [];
+  $('qtitle').textContent = 'Question ' + G.asked + ' · ' + (G.q.variant ? 'similar to worksheet #' : 'worksheet #') + G.q.ref;
+  $('qbody').innerHTML = G.q.kind === 'pair' ? pairHtml(G.q) : graphHtml(G.q);
+  if(G.q.kind === 'graph') bindGraph();
+  $('qhelp').hidden = true; $('qhelp').innerHTML = '';
+  $('helpBtn').textContent = '💡 Help'; $('nextBtn').hidden = true;
+  say('', '');
+  var turn = $('turn');
+  if(G.mode === 'team'){ turn.hidden = false; turn.className = 'turn ' + G.turn; turn.textContent = (G.turn === 'red' ? '🔴 ' : '🔵 ') + cap(G.turn) + ' team’s turn'; }
+  else turn.hidden = true;
+  updateButtons();
+}
+function renderStats(){
+  $('stats').textContent = '✓ Correct: ' + G.stats.correct + '   ✗ Tagged: ' + G.stats.wrong + '   💡 Help used: ' + G.stats.help;
+}
+
+function onCheck(){
+  if(G.ended || G.state !== 'ask' || G.spectate || Date.now() < G.tagUntil) return;
+  var q = G.q, r = evaluate(q);
+  if(r.blank){ say(q.kind === 'graph' ? 'Graph both lines first (2 points each) and fill in every box. The ordered pair is only needed when there is one solution.' : 'Fill in every box first.', 'warn'); return; }
+  if(r.ok){
+    G.stats.correct++; record(q.id, 'c');
+    if(G.mode === 'solo') G.teams[G.myTeam]++;
+    else if(G.mode === 'team') G.teams[G.turn]++;
+    else { L.me.correct++; writeMe(); }
+    say('✓ Correct! ' + (G.mode === 'team' ? cap(G.turn) + ' team’s runner moves one step.' : 'Your runner moves one step.'), 'good');
+    if(q.kind === 'graph') redrawInput(true);
+    renderField(); renderStats();
+    if(G.mode !== 'live') checkWin();
+    afterQuestion();
+  } else {
+    G.stats.wrong++; record(q.id, 'w');
+    if(G.mode === 'live'){ L.me.wrong++; writeMe(); }
+    renderStats();
+    if(G.mode === 'team'){
+      say('✗ Not quite. Here is how it works out. The turn passes to the other team.', 'warn');
+      $('qhelp').hidden = false; $('qhelp').innerHTML = q.kind === 'pair' ? pairSolutionHtml(q) : graphSolutionHtml(q); showCanvas(q);
+      afterQuestion();
+    } else {
+      say('✗ Not quite. You’re tagged for 8 seconds. Look at the red boxes and try again, or press Help.', 'warn');
+      startTag();
+    }
+  }
+}
+function onHelp(){
+  if(G.ended || G.state !== 'ask' || G.spectate) return;
+  var q = G.q, box = $('qhelp');
+  if(G.helpLevel === 0){
+    G.helpLevel = 1; box.hidden = false; box.innerHTML = hintHtml(q);
+    $('helpBtn').textContent = '💡 Show full solution';
+  } else {
+    G.helpLevel = 2; G.stats.help++; record(q.id, 'h'); if(G.mode === 'live') writeMe(); renderStats();
+    box.hidden = false; box.innerHTML = q.kind === 'pair' ? pairSolutionHtml(q) : graphSolutionHtml(q); showCanvas(q);
+    say('Study the solution. No step for this question, but you’ll get the next one!', '');
+    $('helpBtn').textContent = '💡 Help';
+    afterQuestion();
+  }
+}
+function onNext(){
+  if(G.ended || G.state !== 'done') return;
+  if(G.mode === 'team') G.turn = other(G.turn);
+  nextQuestion();
+}
+
+/* two-step confirm buttons */
+function armButton(btn, idleText, armedText, action){
+  if(btn.dataset.armed === '1'){ btn.dataset.armed = '0'; btn.classList.remove('armed'); btn.textContent = idleText; action(); return; }
+  btn.dataset.armed = '1'; btn.classList.add('armed'); btn.textContent = armedText;
+  setTimeout(function(){ if(btn.dataset.armed === '1'){ btn.dataset.armed = '0'; btn.classList.remove('armed'); btn.textContent = idleText; } }, 4000);
+}
+function onRestart(){
+  var msg = G.mode === 'live' ? 'Click again to reset your own progress' : 'Click again to restart the game';
+  armButton($('restartBtn'), '↻ Restart', msg, function(){
+    if(G.mode === 'live'){ resetOwn(false); }
+    else startGame(G.mode);
+  });
+}
+
+/* ================= winning ================= */
+function checkWin(){
+  if(G.ended) return;
+  var r = G.teams.red >= G.dist, b = G.teams.blue >= G.dist;
+  if(!r && !b) return;
+  G.ended = true;
+  var w = (r && b) ? (G.teams.red >= G.teams.blue ? 'red' : 'blue') : (r ? 'red' : 'blue');
+  showOverlay(w); updateButtons(); $('nextBtn').hidden = true;
+}
+function showOverlay(w){
+  var t = $('winTitle'), x = $('winText'), btns = $('winBtns');
+  btns.textContent = '';
+  if(G.mode === 'solo'){
+    var won = (w === G.myTeam);
+    $('winIcon').textContent = won ? '🏆' : '😬';
+    t.textContent = won ? 'You captured the flag!' : 'The rival captured your flag!';
+    x.textContent = won ? 'Great work. You answered ' + G.stats.correct + ' correctly.' : 'You got ' + G.stats.correct + ' step' + (G.stats.correct === 1 ? '' : 's') + ' this time. Try again!';
+  } else {
+    $('winIcon').textContent = '🚩';
+    t.textContent = cap(w) + ' team captured the flag!';
+    x.textContent = 'Final: Red ' + G.teams.red + ' · Blue ' + G.teams.blue + ' (out of ' + G.dist + ').';
+  }
+  if(G.mode === 'live'){
+    x.textContent += ' Wait for your teacher to start the next round, or practice on your own.';
+    var p = el('button','btn primary','Practice solo'); p.onclick = function(){ closeOverlay(); startGame('solo'); }; btns.appendChild(p);
+  } else {
+    var a = el('button','btn primary','Play again'); a.onclick = function(){ closeOverlay(); startGame(G.mode); }; btns.appendChild(a);
+  }
+  var rb = el('button','btn','📊 View results'); rb.onclick = function(){ closeOverlay(); showResults(); }; btns.appendChild(rb);
+  var m = el('button','btn','Back to menu'); m.onclick = leaveToMenu; btns.appendChild(m);
+  if(G.mode === 'live'){ var c = el('button','btn','Close'); c.onclick = closeOverlay; btns.appendChild(c); }
+  $('overlay').hidden = false;
+}
+function closeOverlay(){ $('overlay').hidden = true; }
+
+/* ================= modes ================= */
+function stopTimers(){ clearInterval(botTimer); clearInterval(tagTimer); botTimer = null; tagTimer = null; }
+function startGame(mode, opts){
+  opts = opts || {};
+  stopTimers(); closeOverlay();
+  G.mode = mode; G.teams = {red:0, blue:0}; G.turn = 'red'; G.ended = false; G.asked = 0; G.qi = 0; G.tagUntil = 0; G.vorder = null; G.vi = 0;
+  G.stats = {correct:0, wrong:0, help:0}; G.spectate = !!opts.spectate; G.log = [];
+  G.order = shuffle(Q.map(function(_, i){ return i; }));
+  if(mode === 'solo'){ G.dist = 10; G.myTeam = 'blue'; }
+  else if(mode === 'team'){ G.dist = 10; }
+  else { G.dist = L.dist; G.myTeam = L.me ? L.me.team : 'blue'; if(L.me){ G.stats.correct = L.me.correct; G.stats.wrong = L.me.wrong; G.stats.help = L.me.help || 0; G.log = (L.me.log || []).map(parseLog); } }
+  show('game');
+  $('modeTag').textContent = mode === 'solo' ? 'Solo practice' : (mode === 'team' ? 'Two teams, one screen' : (G.spectate ? 'Live class · scoreboard' : 'Live class · ' + cap(G.myTeam) + ' team'));
+  setLabels(); renderField(); renderStats();
+  $('resBtn').textContent = (mode === 'live' && LIVE.canEdit) ? '📊 Class results' : '📊 View results';
+  $('qpanel').hidden = G.spectate;
+  $('statsBox').hidden = G.spectate;
+  $('banner').hidden = true;
+  $('sbBox').hidden = (mode !== 'live');
+  $('tctl').hidden = true;
+  if(mode === 'solo'){
+    botTimer = setInterval(function(){ if(!G.ended){ G.teams.red++; renderField(); checkWin(); } }, 40000);
+  }
+  if(mode === 'live'){ buildTeacherControls(); onLivePlayers(); }
+  if(!G.spectate) nextQuestion();
+}
+function leaveToMenu(){
+  stopTimers(); closeOverlay(); unsubscribeLive(); G.mode = null; G.ended = false; show('menu');
+}
+
+/* ================= live class (shared database) ================= */
+var LIVE = {ok:false, db:null, user:null, uid:null, canWrite:null, canEdit:false};
+var L = {round:1, dist:20, players:[], me:null, joined:false, unsubs:[], metaReady:null, wq:Promise.resolve(), pickDist:20};
+
+function updateLiveCard(){
+  var n = $('liveNote'), b = $('liveBtn');
+  if(!LIVE.ok){
+    n.textContent = 'Not available here. Live play needs everyone to open this page signed in with permission to interact with it. You can still use the one-screen team game or solo practice.';
+    b.disabled = true; return;
+  }
+  b.disabled = false;
+  n.textContent = LIVE.canWrite === false ? 'You have view-only access, so you can watch the scoreboard but not play.' : 'Ready. Everyone who opens this page joins the same class game.';
+}
+async function initLive(){
+  try{
+    if(!(window.claude && window.claude.use)) throw 0;
+    var db = await window.claude.use('db'), user = await window.claude.use('user');
+    if(!db || !user) throw 0;
+    var uid = await user.id(); if(!uid) throw 0;
+    LIVE.canWrite = await user.can('data.write');
+    LIVE.canEdit = await user.canEdit();
+    LIVE.db = db; LIVE.user = user; LIVE.uid = uid; LIVE.ok = true;
+  }catch(e){ LIVE.ok = false; }
+  updateLiveCard();
+}
+function liveErr(e){
+  var code = e && e.code ? e.code : 'error';
+  var b = $('banner'); b.hidden = false;
+  b.textContent = 'There was a problem talking to the class game (' + code + '). If you only have view-only access you can’t play live. Use the menu to try solo practice.';
+}
+function unsubscribeLive(){ L.unsubs.forEach(function(u){ try{ u(); }catch(e){} }); L.unsubs = []; L.joined = false; L.me = null; }
+function subscribeLive(){
+  if(L.unsubs.length) return;
+  var resolve; L.metaReady = new Promise(function(r){ resolve = r; });
+  L.unsubs.push(LIVE.db.doc('meta/game').onSnapshot(function(snap){
+    var d = snap.exists ? snap.data() : null;
+    L.round = (d && +d.round) || 1; L.dist = (d && +d.dist) || 20; resolve(); onLiveMeta();
+  }, liveErr));
+  L.unsubs.push(LIVE.db.collection('players').onSnapshot(function(snap){
+    L.players = snap.docs.map(function(d){ return Object.assign({}, d.data(), {id:d.id}); });
+    onLivePlayers();
+  }, liveErr));
+}
+function writeMe(){
+  if(!L.me || !LIVE.ok) return;
+  var snapshot = Object.assign({}, L.me);
+  L.wq = L.wq.then(function(){ return LIVE.db.doc('players/' + LIVE.uid).set(snapshot); }).catch(liveErr);
+}
+function onLiveMeta(){
+  if(G.mode !== 'live') { return; }
+  G.dist = L.dist;
+  if(L.joined && L.me && L.me.round !== L.round) resetOwn(true);
+  setLabels(); renderField(); updateRoundLabel();
+}
+function resetOwn(newRound){
+  if(!L.me) return;
+  L.me.correct = 0; L.me.wrong = 0; L.me.help = 0; L.me.log = []; L.me.round = L.round; writeMe(); G.log = [];
+  G.stats = {correct:0, wrong:0, help:0}; G.order = shuffle(Q.map(function(_, i){ return i; })); G.qi = 0; G.asked = 0; G.tagUntil = 0;
+  if(newRound){ G.ended = false; closeOverlay(); }
+  renderStats(); if(!G.spectate) nextQuestion();
+}
+function onLivePlayers(){
+  if(G.mode !== 'live') return;
+  var sums = {red:0, blue:0}, cnt = {red:0, blue:0}, rows = {red:[], blue:[]};
+  L.players.forEach(function(p){
+    if(+p.round !== L.round || (p.team !== 'red' && p.team !== 'blue')) return;
+    var c = Math.max(0, +p.correct || 0); sums[p.team] += c; cnt[p.team]++; rows[p.team].push({name: String(p.name || 'Student').slice(0,20), c: c});
+  });
+  G.dist = L.dist;
+  G.teams.red = Math.min(G.dist, sums.red); G.teams.blue = Math.min(G.dist, sums.blue);
+  $('lnRed').textContent = 'Red team · ' + cnt.red + ' player' + (cnt.red === 1 ? '' : 's');
+  $('lnBlue').textContent = 'Blue team · ' + cnt.blue + ' player' + (cnt.blue === 1 ? '' : 's');
+  renderField();
+  var sb = $('sb'); sb.textContent = '';
+  var wrap = el('div','score');
+  ['red','blue'].forEach(function(t){
+    var col = el('div'); col.appendChild(el('div','tname ' + t, cap(t) + ': ' + G.teams[t] + ' / ' + G.dist));
+    var ol = el('ol');
+    rows[t].sort(function(a, b){ return b.c - a.c; }).slice(0,5).forEach(function(r){ ol.appendChild(el('li', null, r.name + ' (' + r.c + ')')); });
+    if(!rows[t].length) col.appendChild(el('div','muted','No players yet')); else col.appendChild(ol);
+    wrap.appendChild(col);
+  });
+  sb.appendChild(wrap);
+  var r = G.teams.red >= G.dist, b = G.teams.blue >= G.dist;
+  if(!r && !b){ if(G.ended){ G.ended = false; closeOverlay(); updateButtons(); } }
+  else checkWin();
+  updateButtons();
+  if(!$('results').hidden) renderResults();
+}
+function updateRoundLabel(){ var r = $('roundLbl'); if(r) r.textContent = 'Round ' + L.round; }
+function buildTeacherControls(){
+  var box = $('tctl'); box.textContent = '';
+  if(!LIVE.canEdit){ box.hidden = true; return; }
+  box.hidden = false;
+  box.appendChild(el('h3', null, 'Teacher controls'));
+  var lbl = el('p', 'muted', 'Round 1'); lbl.id = 'roundLbl'; box.appendChild(lbl);
+  var row = el('div','tctl');
+  var sel = el('select','fld'); [10,15,20,30,40].forEach(function(n){ var o = el('option', null, n + ' steps to win'); o.value = n; if(n === L.pickDist) o.selected = true; sel.appendChild(o); });
+  sel.setAttribute('aria-label','Steps needed to win');
+  sel.onchange = function(){ L.pickDist = +sel.value; };
+  var go = el('button','btn','Start a new round');
+  go.onclick = function(){
+    armButton(go, 'Start a new round', 'Click again: this resets everyone', function(){
+      L.wq = L.wq.then(function(){ return LIVE.db.doc('meta/game').set({round: L.round + 1, dist: +sel.value}); }).catch(liveErr);
+    });
+  };
+  row.appendChild(sel); row.appendChild(go); box.appendChild(row);
+  updateRoundLabel();
+}
+async function openLive(){
+  if(!LIVE.ok) return;
+  subscribeLive(); show('join'); $('modeTag').textContent = 'Live class';
+  $('joinMsg').textContent = '';
+  $('joinInfo').textContent = LIVE.canWrite === false ? 'You have view-only access, so you can watch the scoreboard but not play.' : 'Choose a name and a team. If you reload the page later, join again with the same team to keep your steps.';
+  $('joinGo').disabled = (LIVE.canWrite === false);
+}
+function pickTeam(){
+  var v = $('jteam').value; if(v === 'red' || v === 'blue') return v;
+  var c = {red:0, blue:0};
+  L.players.forEach(function(p){ if(+p.round === L.round && (p.team === 'red' || p.team === 'blue')) c[p.team]++; });
+  if(c.red === c.blue) return Math.random() < 0.5 ? 'red' : 'blue';
+  return c.red < c.blue ? 'red' : 'blue';
+}
+async function joinGame(){
+  $('joinMsg').textContent = 'Joining…';
+  try{
+    await L.metaReady;
+    var name = ($('jname').value || '').replace(/[\u0000-\u001f]/g,'').trim().slice(0,20) || 'Student';
+    var snap = await LIVE.db.doc('players/' + LIVE.uid).get();
+    var old = snap.exists ? snap.data() : null;
+    if(old && +old.round === L.round && (old.team === 'red' || old.team === 'blue')){
+      L.me = {name:name, team:old.team, correct:+old.correct || 0, wrong:+old.wrong || 0, help:+old.help || 0, log:Array.isArray(old.log) ? old.log.slice() : [], round:L.round};
+    } else {
+      L.me = {name:name, team:pickTeam(), correct:0, wrong:0, help:0, log:[], round:L.round};
+    }
+    L.joined = true; await LIVE.db.doc('players/' + LIVE.uid).set(Object.assign({}, L.me));
+    startGame('live');
+  }catch(e){ L.joined = false; $('joinMsg').textContent = 'Couldn’t join (' + ((e && e.code) || 'error') + '). You may have view-only access.'; }
+}
+function watch(){ subscribeLive(); L.joined = false; L.me = null; startGame('live', {spectate:true}); }
+
+
+/* ================= results ================= */
+var QORDER = Q.map(function(x){ return x.id; });
+var VCACHE = {};
+function baseOf(id){ return String(id).split('~')[0]; }
+function getQ(id){
+  var i = String(id).indexOf('~');
+  if(i < 0) return origOf(id);
+  if(!VCACHE[id]) VCACHE[id] = makeVariant(id.slice(0, i), +id.slice(i + 1));
+  return VCACHE[id];
+}
+function qLabel(id){
+  var q = getQ(id); if(!q) return String(id);
+  if(!q.variant) return q.kind === 'pair' ? '#' + q.ref + ' ' + pairText(q.pt) : '#' + q.ref;
+  var eqs = (q.kind === 'pair' ? q.eqs.map(function(e){ return e.t; }) : q.eqs).join(' ; ');
+  return '#' + q.ref + ' similar · ' + (q.kind === 'pair' ? pairText(q.pt) + ' in ' : '') + eqs;
+}
+function orderedIds(m){
+  return Object.keys(m).sort(function(a, b){
+    var ia = QORDER.indexOf(baseOf(a)), ib = QORDER.indexOf(baseOf(b));
+    if(ia !== ib) return ia - ib;
+    var va = a.indexOf('~') >= 0, vb = b.indexOf('~') >= 0;
+    if(va !== vb) return va ? 1 : -1;
+    return a < b ? -1 : a > b ? 1 : 0;
+  });
+}
+function simStats(ev){
+  var att = 0, first = 0;
+  Object.keys(ev).forEach(function(id){ if(id.indexOf('~') < 0) return; att++; var st = statusOf(ev[id]); if(st.correct && !st.wrong) first++; });
+  return [att, first];
+}
+function parseLog(str){ var a = String(str).split(':'); return {id:a[0], r:a[1]}; }
+function record(id, r){
+  G.log.push({id:id, r:r, team: G.mode === 'team' ? G.turn : G.myTeam});
+  if(G.mode === 'live' && L.me){
+    L.me.log = L.me.log || []; L.me.log.push(id + ':' + r); if(L.me.log.length > 300) L.me.log.shift();
+    if(r === 'h') L.me.help = (L.me.help || 0) + 1;
+  }
+}
+function byQuestion(entries){ var m = {}; entries.forEach(function(e){ (m[e.id] = m[e.id] || []).push(e.r); }); return m; }
+function statusOf(ev){
+  var cyc = [];
+  for(var i = 0; i < ev.length; i++){ cyc.push(ev[i]); if(ev[i] === 'c' || ev[i] === 'h') break; }
+  return {wrong: cyc.filter(function(r){ return r === 'w'; }).length, correct: cyc.indexOf('c') >= 0, help: cyc.indexOf('h') >= 0};
+}
+function statusText(s){
+  if(s.correct) return s.wrong ? 'Correct after ' + s.wrong + ' wrong ' + (s.wrong === 1 ? 'try' : 'tries') : 'Correct on the first try';
+  if(s.help) return 'Used help' + (s.wrong ? ' (after ' + s.wrong + ' wrong)' : '');
+  if(s.wrong) return 'Not solved (' + s.wrong + ' wrong)';
+  return '';
+}
+function statusShort(s){
+  if(s.correct) return s.wrong ? 'after ' + s.wrong + ' wrong' : 'first try';
+  if(s.help) return 'used help'; if(s.wrong) return 'unsolved'; return '';
+}
+function mkTable(heads, rows){
+  var wrap = el('div'); wrap.style.overflowX = 'auto';
+  var t = el('table', 'rt'), thead = el('thead'), tr = el('tr');
+  heads.forEach(function(h){ tr.appendChild(el('th', null, h)); }); thead.appendChild(tr); t.appendChild(thead);
+  var tb = el('tbody');
+  rows.forEach(function(r){ var tr2 = el('tr'); r.forEach(function(c){ tr2.appendChild(el('td', null, String(c))); }); tb.appendChild(tr2); });
+  t.appendChild(tb); wrap.appendChild(t); return wrap;
+}
+var TOTAL_Q = Q.length;
+var LEGEND = 'How the score works: first try = 1 point, correct after a wrong try = 0.5, used help or not solved = 0. The score is out of the ' + TOTAL_Q + ' worksheet problems, or out of the number attempted if a student answered more, because similar problems count too.';
+function fmtPts(n){ return n % 1 ? n.toFixed(1) : String(n); }
+function scoreOf(m){
+  var att = 0, pts = 0, solved = 0;
+  Object.keys(m).forEach(function(id){
+    var st = statusOf(m[id]); att++;
+    if(st.correct){ solved++; pts += st.wrong ? 0.5 : 1; }
+  });
+  var denom = Math.max(TOTAL_Q, att);
+  return {att:att, pts:pts, solved:solved, denom:denom, pct:Math.round(100*pts/denom), acc: att ? Math.round(100*pts/att) : null};
+}
+function scoreText(sc){
+  return 'Worksheet score: ' + fmtPts(sc.pts) + ' of ' + sc.denom + ' (' + sc.pct + '%) · ' + sc.att + ' problem' + (sc.att === 1 ? '' : 's') + ' attempted · accuracy on attempted problems: ' + (sc.acc == null ? '—' : sc.acc + '%');
+}
+function accuracy(c, w){ return (c + w) ? Math.round(100*c/(c + w)) + '%' : '—'; }
+function classRows(){
+  return L.players.filter(function(p){ return +p.round === L.round && (p.team === 'red' || p.team === 'blue'); }).map(function(p){
+    return {name:String(p.name || 'Student').slice(0,20), team:p.team, c:+p.correct || 0, w:+p.wrong || 0, h:+p.help || 0,
+            ev: byQuestion((Array.isArray(p.log) ? p.log : []).map(parseLog))};
+  }).map(function(r){ r.sc = scoreOf(r.ev); return r; }).sort(function(a, b){ return a.team === b.team ? a.name.localeCompare(b.name) : (a.team < b.team ? -1 : 1); });
+}
+function csvCell(v){ v = String(v); if(/^[=+\-@]/.test(v)) v = "'" + v; return '"' + v.replace(/"/g, '""') + '"'; }
+function classCsv(){
+  var rows = classRows(), head = ['Name','Team','Correct','Tagged (wrong)','Help used','Answer accuracy','Problems attempted','Score points','Worksheet score %','Accuracy on attempted %'].concat(QORDER.map(qLabel), ['Similar problems attempted','Similar problems right on first try']);
+  var out = [head.map(csvCell).join(',')];
+  rows.forEach(function(r){
+    out.push([r.name, cap(r.team), r.c, r.w, r.h, accuracy(r.c, r.w), r.sc.att, fmtPts(r.sc.pts), r.sc.pct + '%', r.sc.acc == null ? '' : r.sc.acc + '%'].concat(QORDER.map(function(id){ return r.ev[id] ? statusShort(statusOf(r.ev[id])) : ''; }), simStats(r.ev)).map(csvCell).join(','));
+  });
+  return out.join('\n');
+}
+function personalLines(entries){
+  var m = byQuestion(entries), lines = [];
+  orderedIds(m).forEach(function(id){ lines.push('  ' + qLabel(id) + ': ' + statusText(statusOf(m[id]))); });
+  return lines;
+}
+function resultsText(){
+  var nm = $('resName') ? $('resName').value.trim() : '';
+  var lines = ['Capture the Flag · 3-1 Practice (Systems of Equations)', 'Name: ' + ((G.mode === 'live' && L.me) ? L.me.name : (nm || '(not entered)')),
+    'Mode: ' + (G.mode === 'solo' ? 'Solo practice' : G.mode === 'team' ? 'Two teams, one screen' : 'Live class game'), 'Date: ' + new Date().toLocaleDateString()];
+  if(G.mode === 'team'){
+    lines.push('Final: Red ' + G.teams.red + ' · Blue ' + G.teams.blue + ' (steps to win: ' + G.dist + ')', '');
+    ['red','blue'].forEach(function(t){
+      var es = G.log.filter(function(e){ return e.team === t; });
+      lines.push(cap(t) + ' team: ' + es.filter(function(e){ return e.r === 'c'; }).length + ' correct, ' + es.filter(function(e){ return e.r === 'w'; }).length + ' wrong, ' + es.filter(function(e){ return e.r === 'h'; }).length + ' help');
+      lines.push('  ' + scoreText(scoreOf(byQuestion(es)))); lines = lines.concat(personalLines(es)); lines.push('');
+    });
+  } else {
+    lines.push('Totals: ' + G.stats.correct + ' correct, ' + G.stats.wrong + ' tagged, ' + G.stats.help + ' help used', scoreText(scoreOf(byQuestion(G.log))), 'Scoring: first try = 1 point, correct after a wrong try = 0.5, help used or not solved = 0. Out of the ' + TOTAL_Q + ' worksheet problems, or the number attempted if more (similar problems count too).', '');
+    lines = lines.concat(personalLines(G.log));
+  }
+  return lines.join('\n');
+}
+function saveFile(filename, data, msgEl){
+  Promise.resolve().then(function(){
+    if(!(window.claude && window.claude.use)) throw {code:'unavailable'};
+    return window.claude.use('downloads');
+  }).then(function(dl){ if(!dl) throw {code:'unavailable'}; return dl.save({filename:filename, data:data}); })
+    .then(function(){ msgEl.textContent = 'Saved!'; })
+    .catch(function(err){ msgEl.textContent = (err && err.code === 'declined') ? 'Save cancelled.' : 'Saving a file isn’t available here. Use Copy instead.'; });
+}
+function copyText(text, msgEl, holder){
+  function fallback(){
+    var ta = holder.querySelector('textarea') || el('textarea', 'fld'); ta.readOnly = true; ta.rows = 8; ta.style.width = '100%'; ta.value = text; holder.appendChild(ta); ta.focus(); ta.select();
+    var ok = false; try{ ok = document.execCommand('copy'); }catch(e){} msgEl.textContent = ok ? 'Copied!' : 'Select the text below and copy it.';
+  }
+  if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(function(){ msgEl.textContent = 'Copied!'; }, fallback); else fallback();
+}
+function renderResults(){
+  var box = $('resBody'); box.textContent = '';
+  var isTeacher = G.mode === 'live' && LIVE.canEdit;
+  $('resTitle').textContent = isTeacher ? 'Class results' : 'Results';
+  if(!G.spectate){
+    box.appendChild(el('h3', null, G.mode === 'team' ? 'How the teams did' : 'Your results'));
+    if(G.mode === 'team'){
+      box.appendChild(el('p', null, 'Final: Red ' + G.teams.red + ' · Blue ' + G.teams.blue + ' (steps to win: ' + G.dist + ')'));
+      ['red','blue'].forEach(function(t){ var tp = el('p'); tp.appendChild(el('b', null, cap(t) + ' team · ' + scoreText(scoreOf(byQuestion(G.log.filter(function(e){ return e.team === t; })))))); box.appendChild(tp); });
+      box.appendChild(el('p', 'muted', LEGEND));
+      var mr = byQuestion(G.log.filter(function(e){ return e.team === 'red'; })), mb = byQuestion(G.log.filter(function(e){ return e.team === 'blue'; }));
+      var rows = orderedIds(Object.assign({}, mr, mb)).map(function(id){ return [qLabel(id), mr[id] ? statusText(statusOf(mr[id])) : '', mb[id] ? statusText(statusOf(mb[id])) : '']; });
+      if(rows.length) box.appendChild(mkTable(['Problem','Red team','Blue team'], rows)); else box.appendChild(el('p','muted','No answers yet.'));
+    } else {
+      box.appendChild(el('p', null, '✓ ' + G.stats.correct + ' correct · ✗ ' + G.stats.wrong + ' tagged · 💡 ' + G.stats.help + ' help used · accuracy ' + accuracy(G.stats.correct, G.stats.wrong)));
+      var sp = el('p'); sp.appendChild(el('b', null, scoreText(scoreOf(byQuestion(G.log))))); box.appendChild(sp); box.appendChild(el('p', 'muted', LEGEND));
+      var m = byQuestion(G.log);
+      var prow = orderedIds(m).map(function(id){ return [qLabel(id), statusText(statusOf(m[id]))]; });
+      if(prow.length) box.appendChild(mkTable(['Worksheet problem','Result'], prow)); else box.appendChild(el('p','muted','No answers yet.'));
+    }
+    var holder = el('div');
+    if(G.mode !== 'live'){
+      var nrow = el('p'); nrow.appendChild(document.createTextNode(G.mode === 'team' ? 'Names of the students: ' : 'Your name: '));
+      var ni = el('input', 'fld'); ni.id = 'resName'; ni.type = 'text'; ni.maxLength = 60; ni.style.cssText = 'width:26ch;text-align:left'; ni.setAttribute('aria-label', 'Name'); nrow.appendChild(ni); holder.appendChild(nrow);
+    }
+    var msg = el('span', 'msg'); msg.setAttribute('role', 'status');
+    var acts = el('div', 'actions');
+    var sv = el('button', 'btn primary', 'Save my results'); sv.onclick = function(){ saveFile('capture-the-flag-results.txt', resultsText(), msg); };
+    var cp = el('button', 'btn', 'Copy results'); cp.onclick = function(){ copyText(resultsText(), msg, holder); };
+    acts.appendChild(sv); acts.appendChild(cp); acts.appendChild(msg); holder.appendChild(acts); box.appendChild(holder);
+    if(G.mode !== 'live') box.appendChild(el('p', 'muted', 'Results from this mode live only on this screen. Save them and hand them in, or use the live class game so your teacher sees them automatically.'));
+  }
+  if(isTeacher){
+    var rs = classRows();
+    box.appendChild(el('h3', null, 'Class results · round ' + L.round + ' · ' + rs.length + ' student' + (rs.length === 1 ? '' : 's')));
+    if(!rs.length) box.appendChild(el('p', 'muted', 'No students have joined this round yet.'));
+    else {
+      box.appendChild(mkTable(['Name','Team','Correct','Tagged','Help','Attempted','Worksheet score'], rs.map(function(r){ return [r.name, cap(r.team), r.c, r.w, r.h, String(r.sc.att), fmtPts(r.sc.pts) + ' / ' + r.sc.denom + ' (' + r.sc.pct + '%)']; })));
+      box.appendChild(el('p', 'muted', LEGEND));
+      box.appendChild(el('h3', null, 'Which problems were hardest?'));
+      var hard = QORDER.map(function(base){
+        var seen = 0, first = 0, wr = 0, hp = 0;
+        rs.forEach(function(r){
+          Object.keys(r.ev).forEach(function(id){
+            if(baseOf(id) !== base) return;
+            var st = statusOf(r.ev[id]); seen++; if(st.correct && !st.wrong) first++; wr += st.wrong; if(st.help) hp++;
+          });
+        });
+        return {id:base, seen:seen, first:first, wr:wr, hp:hp};
+      }).filter(function(x){ return x.seen; }).sort(function(a, b){ return (b.wr + b.hp) - (a.wr + a.hp); });
+      box.appendChild(mkTable(['Problem (including similar ones)','Times asked','Right on 1st try','Wrong attempts','Used help'], hard.map(function(x){ return [qLabel(x.id) + ' and similar', x.seen, x.first + ' (' + Math.round(100*x.first/x.seen) + '%)', x.wr, x.hp]; })));
+      var cm = el('span', 'msg'); cm.setAttribute('role', 'status');
+      var ca = el('div', 'actions'), dl = el('button', 'btn primary', 'Download class results (CSV)');
+      dl.onclick = function(){ saveFile('capture-the-flag-class-results.csv', classCsv(), cm); };
+      ca.appendChild(dl); ca.appendChild(cm); box.appendChild(ca);
+      box.appendChild(el('p', 'muted', 'Only the current round is shown. Download before you start a new round, because a new round clears everyone’s steps.'));
+    }
+  }
+}
+function showResults(){ show('results'); renderResults(); window.scrollTo(0, 0); }
+
+/* ================= wiring ================= */
+$('soloBtn').onclick = function(){ startGame('solo'); };
+$('teamBtn').onclick = function(){ startGame('team'); };
+$('liveBtn').onclick = openLive;
+$('joinGo').onclick = joinGame;
+$('watchBtn').onclick = watch;
+$('joinBack').onclick = leaveToMenu;
+$('menuBtn').onclick = leaveToMenu;
+$('checkBtn').onclick = onCheck;
+$('helpBtn').onclick = onHelp;
+$('restartBtn').onclick = onRestart;
+$('nextBtn').onclick = onNext;
+$('resBtn').onclick = showResults;
+$('resBack').onclick = function(){ if(G.mode){ show('game'); redrawInput(G.state === 'done'); } else show('menu'); };
+$('qbody').addEventListener('input', function(e){ if(e.target.classList) e.target.classList.remove('ok','bad'); });
+$('qbody').addEventListener('keydown', function(e){ if(e.key === 'Enter' && e.target.tagName === 'INPUT') onCheck(); });
+document.addEventListener('keydown', function(e){ if(e.key === 'Escape' && !$('overlay').hidden && G.mode === 'live') closeOverlay(); });
+
+window.addEventListener('resize', function(){ redrawInput(G.state === 'done'); });
+show('menu');
+initLive();
+})();
+</script>
+</body>
+</html>
